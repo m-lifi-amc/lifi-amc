@@ -16,9 +16,9 @@ This project implements three 1D CNN architectures for automatic modulation clas
 
 #Key Results: test accuracy at [0:18dB]
 
-Lightweight 1D CNN | 83.8% | 45 KB | 9.5 ms per batch
-Standard 1D CNN | 85.0% | 559 KB | 29.8 ms per batch
-Robust 1D CNN | 84.2% | 1,179 KB | 52.3 ms per batch
+Lightweight 1D CNN | 83.8% | 45 KB | 9.5 ms per batch |
+Standard 1D CNN | 85.0% | 559 KB | 29.8 ms per batch |
+Robust 1D CNN | 84.2% | 1,179 KB | 52.3 ms per batch |
 
 # Contact
 
