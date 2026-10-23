@@ -13,6 +13,8 @@ This project implements three 1D CNN architectures for automatic modulation clas
 - `trainn.py` - Training pipeline
 - `resultss.py` - Visualization and evaluation
 - `mainn.py` - Main script
+- `testCAP.txt` - Test CAP confusion
+- `testCAP.py` - Random guessing CAP with RANDOMFOREST
 
 #Key Results: test accuracy at [0:18dB]
 
