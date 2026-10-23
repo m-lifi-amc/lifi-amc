@@ -1,0 +1,69 @@
+import numpy as np
+from signall import generate_cap
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+
+# Generate CLEAN (noiseless) signals
+cap16 = [generate_cap(16) for _ in range(500)]
+cap64 = [generate_cap(64) for _ in range(500)]
+
+X = np.array(cap16 + cap64)
+y = np.array([0]*500 + [1]*500) # 0 for CAP-16, 1 for CAP-64
+
+# Split and train a simple classifier
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+clf = RandomForestClassifier()
+clf.fit(X_train, y_train)
+
+print(f"Clean Signal Accuracy: {clf.score(X_test, y_test) * 100:.2f}%")
+
+
+
+def generate_cap(modulation_order):
+    levels = int(np.sqrt(modulation_order)) # 4 for CAP-16, 8 for CAP-64
+    sps = SYMBOL_LENGTH
+    num_symbols = SAMPLE_LENGTH // sps
+    beta = 0.35
+    span = 6
+
+    # Generate random I and Q symbols
+    i_syms = (np.random.randint(0, levels, num_symbols) / (levels - 1)) * 2 - 1
+    q_syms = (np.random.randint(0, levels, num_symbols) / (levels - 1)) * 2 - 1
+
+    # Upsample
+    i_up = np.zeros(num_symbols * sps)
+    q_up = np.zeros(num_symbols * sps)
+    i_up[::sps] = i_syms
+    q_up[::sps] = q_syms
+
+    # Baseband pulse (Raised Cosine)
+    h = raised_cosine_filter(beta, sps, span)
+    h = h / np.sqrt(np.sum(h ** 2)) # normalize energy
+
+    i_shaped = np.convolve(i_up, h, mode='full')
+    q_shaped = np.convolve(q_up, h, mode='full')
+
+    # remove delay
+    delay = span * sps // 2
+    i_shaped = i_shaped[delay : delay + num_symbols * sps]
+    q_shaped = q_shaped[delay : delay + num_symbols * sps]
+
+    # Modulate onto orthogonal carriers
+    t = np.arange(num_symbols * sps)
+    fc = 0.25                              # Carrier frequency (must be < 0.5 for Nyquist)
+
+    # Multiply I by cos, Q by sin
+    signal = (i_shaped * np.cos(2 * np.pi * fc * t)) - (q_shaped * np.sin(2 * np.pi * fc * t))
+
+    # Match length
+    if len(signal) > SAMPLE_LENGTH:
+        signal = signal[:SAMPLE_LENGTH]
+    elif len(signal) < SAMPLE_LENGTH:
+        signal = np.pad(signal, (0, SAMPLE_LENGTH - len(signal)))
+
+    # DC Bias + Normalize
+    dc_bias = np.abs(np.min(signal)) + 0.1
+    signal = signal + dc_bias
+    signal = signal / np.max(signal) if np.max(signal) > 0 else signal
+
+    return signal.astype(np.float32)
